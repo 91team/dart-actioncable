@@ -6,84 +6,87 @@ import 'logger.dart';
 
 class ConnectionMonitor {
   Connection connection;
+  int reconnectAttempts;
 
-  ConnectionMonitor(this.connection);
+  DateTime startedAt;
+  DateTime stoppedAt;
+  DateTime pingedAt;
+  DateTime disconnectedAt;
 
-  bool stop() {
-    return true;
+  ConnectionMonitor(this.connection) : reconnectAttempts = 0;
+
+  void start() {
+    if (!this.isRunning()) {
+      this.startedAt = new DateTime.now();
+      this.stoppedAt = null;
+      this.startPolling();
+      // addEventListener("visibilitychange", this.visibilityDidChange);
+      Logger.log(
+          'ConnectionMonitor started. pollInterval = ${this.getPollInterval()} ms');
+    }
+  }
+
+  void stop() {
+    if (this.isRunning()) {
+      this.stoppedAt = new DateTime.now();
+      this.stopPolling();
+      // removeEventListener("visibilitychange", this.visibilityDidChange);
+      Logger.log('ConnectionMonitor stopped');
+    }
+  }
+
+  bool isRunning() {
+    return (this.startedAt != null) && (this.stoppedAt == null);
+  }
+
+  void recordPing() {
+    this.pingedAt = new DateTime.now();
+  }
+
+  void recordConnect() {
+    this.reconnectAttempts = 0;
+    this.recordPing();
+    this.disconnectedAt = null;
+    Logger.log("ConnectionMonitor recorded connect");
+  }
+
+  void recordDisconnect() {
+    this.disconnectedAt = new DateTime.now();
+    Logger.log("ConnectionMonitor recorded disconnect");
+  }
+
+  // private part. Refactor func to _func
+
+  void startPolling() {
+    this.stopPolling();
+    this.poll();
+  }
+
+  void stopPolling() {
+    // clearTimeout(this.pollTimeout) // Add timeout for polling
+  }
+
+  void poll() {
+    // this.pollTimeout = setTimeout(() {
+    //   this.reconnectIfStale();
+    //   this.poll();
+    // }, this.getPollInterval());
+  }
+
+  getPollInterval() {
+    // const {min, max, multiplier} = this.constructor.pollInterval
+    // const interval = multiplier * Math.log(this.reconnectAttempts + 1)
+    // return Math.round(clamp(interval, min, max) * 1000)
   }
 }
-
-// const now = () => new Date().getTime()
 
 // const secondsSince = time => (now() - time) / 1000
 
 // const clamp = (number, min, max) => Math.max(min, Math.min(max, number))
 
 // class ConnectionMonitor {
-//   constructor(connection) {
-//     this.visibilityDidChange = this.visibilityDidChange.bind(this)
-//     this.connection = connection
-//     this.reconnectAttempts = 0
-//   }
-
-//   start() {
-//     if (!this.isRunning()) {
-//       this.startedAt = now()
-//       delete this.stoppedAt
-//       this.startPolling()
-//       addEventListener("visibilitychange", this.visibilityDidChange)
-//       logger.log(`ConnectionMonitor started. pollInterval = ${this.getPollInterval()} ms`)
-//     }
-//   }
-
-//   stop() {
-//     if (this.isRunning()) {
-//       this.stoppedAt = now()
-//       this.stopPolling()
-//       removeEventListener("visibilitychange", this.visibilityDidChange)
-//       logger.log("ConnectionMonitor stopped")
-//     }
-//   }
-
-//   isRunning() {
-//     return this.startedAt && !this.stoppedAt
-//   }
-
-//   recordPing() {
-//     this.pingedAt = now()
-//   }
-
-//   recordConnect() {
-//     this.reconnectAttempts = 0
-//     this.recordPing()
-//     delete this.disconnectedAt
-//     logger.log("ConnectionMonitor recorded connect")
-//   }
-
-//   recordDisconnect() {
-//     this.disconnectedAt = now()
-//     logger.log("ConnectionMonitor recorded disconnect")
-//   }
 
 //   // Private
-
-//   startPolling() {
-//     this.stopPolling()
-//     this.poll()
-//   }
-
-//   stopPolling() {
-//     clearTimeout(this.pollTimeout)
-//   }
-
-//   poll() {
-//     this.pollTimeout = setTimeout(() => {
-//       this.reconnectIfStale()
-//       this.poll()
-//     }
-//     , this.getPollInterval())
-//   }
 
 //   getPollInterval() {
 //     const {min, max, multiplier} = this.constructor.pollInterval
