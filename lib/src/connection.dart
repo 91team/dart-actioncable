@@ -3,7 +3,7 @@ import 'dart:async';
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
-import 'logger.dart';
+import 'utils/logger.dart';
 import 'subscriptions.dart';
 
 /// Encapsulate the cable connection held by the consumer. This is an internal class not intended for direct user manipulation.
