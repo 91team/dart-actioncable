@@ -1,15 +1,6 @@
 import 'consumer.dart';
 import 'subscription.dart';
 
-class Subscriptions {
-  Consumer consumer;
-  List<Subscription> subscriptions;
-
-  Subscriptions(this.consumer) : subscriptions = [];
-
-  void remove(Subscription subscription) {}
-}
-
 // Collection class for creating (and internally managing) channel subscriptions. The only method intended to be triggered by the user
 // us ActionCable.Subscriptions#create, and it should be called through the consumer like so:
 //
@@ -19,78 +10,82 @@ class Subscriptions {
 //
 // For more details on how you'd configure an actual channel subscription, see ActionCable.Subscription.
 
-// export default class Subscriptions {
-//   constructor(consumer) {
-//     this.consumer = consumer
-//     this.subscriptions = []
-//   }
+class Subscriptions {
+  Consumer consumer;
+  List<Subscription> subscriptions;
 
-//   create(channelName, mixin) {
-//     const channel = channelName
-//     const params = typeof channel === "object" ? channel : {channel}
-//     const subscription = new Subscription(this.consumer, params, mixin)
-//     return this.add(subscription)
-//   }
+  Subscriptions(this.consumer) : subscriptions = [];
 
-//   // Private
+  Subscription create(String channelName) {
+    String channel = channelName;
+    // get params instead of channelName
+    // const params = typeof channel === "object" ? channel : {channel};
+    Subscription subscription = new Subscription(this.consumer, channel);
+    return this.add(subscription);
+  }
 
-//   add(subscription) {
-//     this.subscriptions.push(subscription)
-//     this.consumer.ensureActiveConnection()
-//     this.notify(subscription, "initialized")
-//     this.sendCommand(subscription, "subscribe")
-//     return subscription
-//   }
+  Subscription add(subscription) {
+    this.subscriptions.add(subscription);
+    this.consumer.ensureActiveConnection();
+    this.notify(subscription, "initialized");
+    this.sendCommand(subscription, "subscribe");
+    return subscription;
+  }
 
-//   remove(subscription) {
-//     this.forget(subscription)
-//     if (!this.findAll(subscription.identifier).length) {
-//       this.sendCommand(subscription, "unsubscribe")
-//     }
-//     return subscription
-//   }
+  Subscription remove(Subscription subscription) {
+    this.forget(subscription);
+    if (this.findAll(subscription.identifier).length != 0) {
+      this.sendCommand(subscription, "unsubscribe");
+    }
+    return subscription;
+  }
 
-//   reject(identifier) {
-//     return this.findAll(identifier).map((subscription) => {
-//       this.forget(subscription)
-//       this.notify(subscription, "rejected")
-//       return subscription
-//     })
-//   }
+  List<Subscription> reject(identifier) {
+    return this.findAll(identifier).map((subscription) {
+      this.forget(subscription);
+      this.notify(subscription, "rejected");
+      return subscription;
+    });
+  }
 
-//   forget(subscription) {
-//     this.subscriptions = (this.subscriptions.filter((s) => s !== subscription))
-//     return subscription
-//   }
+  Subscription forget(subscription) {
+    this.subscriptions =
+        (this.subscriptions.where((sub) => sub != subscription));
+    return subscription;
+  }
 
-//   findAll(identifier) {
-//     return this.subscriptions.filter((s) => s.identifier === identifier)
-//   }
+  List<Subscription> findAll(identifier) {
+    return this.subscriptions.where((s) => s.identifier == identifier);
+  }
 
-//   reload() {
-//     return this.subscriptions.map((subscription) =>
-//       this.sendCommand(subscription, "subscribe"))
-//   }
+  reload() {
+    return this
+        .subscriptions
+        .map((subscription) => this.sendCommand(subscription, "subscribe"));
+  }
 
-//   notifyAll(callbackName, ...args) {
-//     return this.subscriptions.map((subscription) =>
-//       this.notify(subscription, callbackName, ...args))
-//   }
+  notifyAll(callbackName, args) {
+    return this
+        .subscriptions
+        .map((subscription) => this.notify(subscription, callbackName, args));
+  }
 
-//   notify(subscription, callbackName, ...args) {
-//     let subscriptions
-//     if (typeof subscription === "string") {
-//       subscriptions = this.findAll(subscription)
-//     } else {
-//       subscriptions = [subscription]
-//     }
+  // it may cause troubles
+  notify(Subscription subscription, String callbackName, [dynamic args]) {
+    List subscriptions;
+    if (subscription is String) {
+      subscriptions = this.findAll(subscription);
+    } else {
+      subscriptions = [subscription];
+    }
+    return subscriptions.map((subscription) =>
+        (subscription[callbackName] is Function
+            ? subscription[callbackName](args)
+            : null));
+  }
 
-//     return subscriptions.map((subscription) =>
-//       (typeof subscription[callbackName] === "function" ? subscription[callbackName](...args) : undefined))
-//   }
-
-//   sendCommand(subscription, command) {
-//     const {identifier} = subscription
-//     return this.consumer.send({command, identifier})
-//   }
-// }
+  sendCommand(Subscription subscription, String command) {
+    String identifier = subscription.identifier;
+    return this.consumer.send({command, identifier});
+  }
+}
