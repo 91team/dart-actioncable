@@ -34,15 +34,15 @@ class Connection {
   bool open() {
     if (this.isActive()) {
       Logger.log(
-          'Attempted to open WebSocket, but existing socket is ${this.getState()}');
+          'Attempted to open WebSocket, but existing socket is ${this._getState()}');
       return false;
     } else {
       Logger.log(
-          'Opening WebSocket, current state is ${this.getState()}, subprotocols: ${protocols}');
+          'Opening WebSocket, current state is ${this._getState()}, subprotocols: ${protocols}');
       // if (this.webSocket) { this.uninstallEventHandlers(); }
       // this.webSocket = new adapters.WebSocket(this.consumer.url, protocols);
-      // this.installEventHandlers();
-      // this.monitor.start();
+      this._installEventHandlers();
+      this.monitor.start();
       return true;
     }
   }
@@ -59,7 +59,7 @@ class Connection {
 
   // define return type
   reopen() {
-    Logger.log('Reopening WebSocket, current state is ${this.getState()}');
+    Logger.log('Reopening WebSocket, current state is ${this._getState()}');
     if (this.isActive()) {
       try {
         return this.close();
@@ -83,29 +83,28 @@ class Connection {
   }
 
   bool isOpen() {
-    return this.isState(["open"]);
+    return this._isState(["open"]);
   }
 
   bool isActive() {
-    return this.isState(["open", "connecting"]);
+    return this._isState(["open", "connecting"]);
   }
 
   // private part. replace func by _func later.
 
-  // TODO
-  bool isProtocolSupported() {
+  bool _isProtocolSupported() {
     // this line check if value of this.getProtocol() presented in supported protocols
     // return indexOf.call(supportedProtocols, this.getProtocol()) >= 0;
     return true; // delete
   }
 
-  bool isState(List states) {
+  bool _isState(List states) {
     // return indexOf.call(states, this.getState()) >= 0;
     return true; // delete
   }
 
   // define return type
-  getState() {
+  _getState() {
     // if (this.webSocket) {
     //   for (let state in adapters.WebSocket) {
     //     if (adapters.WebSocket[state] == this.webSocket.readyState) {
@@ -116,21 +115,19 @@ class Connection {
     return null; // don't delete.
   }
 
-  void installEventHandlers() {
+  void _installEventHandlers() {
     // for (let eventName in this.events) {
     //   const handler = this.events[eventName].bind(this);
     //   this.webSocket[`on${eventName}`] = handler;
     // }
   }
 
-  void uninstallEventHandlers() {
+  void _uninstallEventHandlers() {
     // for (let eventName in this.events) {
     //   this.webSocket[`on${eventName}`] = function() {};
     // }
   }
 }
-
-// What to do with this prorotype?
 
 // Connection.prototype.events = {
 //   message(event) {
@@ -175,5 +172,3 @@ class Connection {
 //     logger.log("WebSocket onerror event")
 //   }
 // }
-
-// export default Connection

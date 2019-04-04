@@ -1,14 +1,14 @@
 import 'consumer.dart';
 import 'subscription.dart';
 
-// Collection class for creating (and internally managing) channel subscriptions. The only method intended to be triggered by the user
-// us ActionCable.Subscriptions#create, and it should be called through the consumer like so:
-//
-//   App = {}
-//   App.cable = ActionCable.createConsumer("ws://example.com/accounts/1")
-//   App.appearance = App.cable.subscriptions.create("AppearanceChannel")
-//
-// For more details on how you'd configure an actual channel subscription, see ActionCable.Subscription.
+/// Collection class for creating (and internally managing) channel subscriptions. The only method intended to be triggered by the user
+/// us ActionCable.Subscriptions#create, and it should be called through the consumer like so:
+///
+///   App = {}
+///   App.cable = ActionCable.createConsumer("ws://example.com/accounts/1")
+///   App.appearance = App.cable.subscriptions.create("AppearanceChannel")
+///
+/// For more details on how you'd configure an actual channel subscription, see ActionCable.Subscription.
 
 class Subscriptions {
   Consumer consumer;

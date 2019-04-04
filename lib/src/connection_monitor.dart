@@ -5,8 +5,9 @@ import 'connection.dart';
 import 'utils/logger.dart';
 import 'utils/helpers.dart';
 
-// Responsible for ensuring the cable connection is in good health by validating the heartbeat pings sent from the server, and attempting
-// revival reconnections if things go astray. Internal class, not intended for direct user manipulation.
+/// Responsible for ensuring the cable connection is in good health by validating the heartbeat pings sent
+/// from the server, and attempting revival reconnections if things go astray. Internal class, not intended
+/// for direct user manipulation.
 
 class ConnectionMonitor {
   Connection connection;
@@ -30,18 +31,18 @@ class ConnectionMonitor {
     if (!this.isRunning()) {
       this.startedAt = now();
       this.stoppedAt = null;
-      this.startPolling();
-      // addEventListener("visibilitychange", this.visibilityDidChange);
+      this._startPolling();
+      // addEventListener("visibilitychange", this._visibilityDidChange);
       Logger.log(
-          'ConnectionMonitor started. pollInterval = ${this.getPollInterval()} ms');
+          'ConnectionMonitor started. pollInterval = ${this._getPollInterval()} ms');
     }
   }
 
   void stop() {
     if (this.isRunning()) {
       this.stoppedAt = now();
-      this.stopPolling();
-      // removeEventListener("visibilitychange", this.visibilityDidChange);
+      this._stopPolling();
+      // removeEventListener("visibilitychange", this._visibilityDidChange);
       Logger.log('ConnectionMonitor stopped');
     }
   }
@@ -66,37 +67,35 @@ class ConnectionMonitor {
     Logger.log("ConnectionMonitor recorded disconnect");
   }
 
-  // private part. Refactor func to _func
-
-  void startPolling() {
-    this.stopPolling();
-    this.poll();
+  void _startPolling() {
+    this._stopPolling();
+    this._poll();
   }
 
-  void stopPolling() {
+  void _stopPolling() {
     if (this.pollTimeout != null) pollTimeout.cancel();
   }
 
-  void poll() {
+  void _poll() {
     this.pollTimeout =
-        new Timer(new Duration(seconds: this.getPollInterval()), () {
-      this.reconnectIfStale();
-      this.poll();
+        new Timer(new Duration(seconds: this._getPollInterval()), () {
+      this._reconnectIfStale();
+      this._poll();
     });
   }
 
-  int getPollInterval() {
+  int _getPollInterval() {
     int interval =
         pollIntervalMiltiplier * math.log(this.reconnectAttempts + 1) ~/ 1;
     return clamp(interval, minPollInterval, maxPollInterval);
   }
 
-  void reconnectIfStale() {
-    if (this.connectionIsStale()) {
+  void _reconnectIfStale() {
+    if (this._connectionIsStale()) {
       Logger.log(
-          'ConnectionMonitor detected stale connection. reconnectAttempts = ${this.reconnectAttempts}, pollInterval = ${this.getPollInterval()} ms, time disconnected = ${secondsSince(this.disconnectedAt)} s, stale threshold = ${staleThreshold} s');
+          'ConnectionMonitor detected stale connection. reconnectAttempts = ${this.reconnectAttempts}, pollInterval = ${this._getPollInterval()} ms, time disconnected = ${secondsSince(this.disconnectedAt)} s, stale threshold = ${staleThreshold} s');
       this.reconnectAttempts++;
-      if (this.disconnectedRecently()) {
+      if (this._disconnectedRecently()) {
         Logger.log("ConnectionMonitor skipping reopening recent disconnect");
       } else {
         Logger.log("ConnectionMonitor reopening");
@@ -105,24 +104,24 @@ class ConnectionMonitor {
     }
   }
 
-  bool connectionIsStale() {
+  bool _connectionIsStale() {
     return secondsSince(this.pingedAt ?? this.startedAt) > staleThreshold;
   }
 
-  bool disconnectedRecently() {
+  bool _disconnectedRecently() {
     return (this.disconnectedAt != null) &&
         (secondsSince(this.disconnectedAt) < staleThreshold);
   }
 
-  void visibilityDidChange() {
-    // if (document.visibilityState == "visible") {
-    //   setTimeout(() {
-    //     if (this.connectionIsStale() || !this.connection.isOpen()) {
-    //       Logger.log(
-    //           'ConnectionMonitor reopening stale connection on visibilitychange. visbilityState = ${document.visibilityState}');
-    //       this.connection.reopen();
-    //     }
-    //   }, 200);
-    // }
-  }
+  // void _visibilityDidChange() {
+  // if (document.visibilityState == "visible") {
+  //   setTimeout(() {
+  //     if (this.connectionIsStale() || !this.connection.isOpen()) {
+  //       Logger.log(
+  //           'ConnectionMonitor reopening stale connection on visibilitychange. visbilityState = ${document.visibilityState}');
+  //       this.connection.reopen();
+  //     }
+  //   }, 200);
+  // }
+  // }
 }

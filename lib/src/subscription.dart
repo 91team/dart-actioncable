@@ -9,7 +9,7 @@ class Subscription {
     identifier = convert.jsonEncode(params);
   }
 
-  // Perform a channel action with the optional data passed as an attribute
+  /// Perform a channel action with the optional data passed as an attribute
   bool perform(String action, [Map data]) {
     Map<String, dynamic> dataToSend = data ?? new Map();
     dataToSend['action'] = action;
