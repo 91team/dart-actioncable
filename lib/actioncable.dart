@@ -1,8 +1,4 @@
-export 'src/connection_monitor.dart';
 export 'src/consumer.dart';
-export 'src/subscription.dart';
-export 'src/subscriptions.dart';
-
 import 'src/consumer.dart';
 
 Consumer createConsumer(String url) {
