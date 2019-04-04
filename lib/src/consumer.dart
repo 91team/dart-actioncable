@@ -15,18 +15,18 @@ class Consumer {
     return this.connection.send(data);
   }
 
-  bool connect() {
-    return this.connection.open();
+  Future<bool> connect() async {
+    return await this.connection.open();
   }
 
   // define type
-  disconnect() {
-    return this.connection.close(allowReconnect: false);
+  disconnect() async {
+    return await this.connection.close(allowReconnect: false);
   }
 
-  bool ensureActiveConnection() {
+  Future<bool> ensureActiveConnection() async {
     if (!this.connection.isActive()) {
-      return this.connection.open();
+      return await this.connection.open();
     }
     return true;
   }

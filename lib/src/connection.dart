@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 
 import 'consumer.dart';
@@ -9,6 +10,8 @@ import 'subscriptions.dart';
 /// Encapsulate the cable connection held by the consumer. This is an internal class not intended for direct user manipulation.
 
 class Connection {
+  Socket webSocket;
+
   Consumer consumer;
   Subscriptions subscriptions;
   ConnectionMonitor monitor;
@@ -31,7 +34,7 @@ class Connection {
     }
   }
 
-  bool open() {
+  Future<bool> open() async {
     if (this.isActive()) {
       Logger.log(
           'Attempted to open WebSocket, but existing socket is ${this._getState()}');
@@ -39,8 +42,8 @@ class Connection {
     } else {
       Logger.log(
           'Opening WebSocket, current state is ${this._getState()}, subprotocols: ${protocols}');
-      // if (this.webSocket) { this.uninstallEventHandlers(); }
-      // this.webSocket = new adapters.WebSocket(this.consumer.url, protocols);
+
+      this.webSocket = await Socket.connect(this.consumer.url, 3000);
       this._installEventHandlers();
       this.monitor.start();
       return true;
@@ -48,21 +51,21 @@ class Connection {
   }
 
   // define return type
-  close({allowReconnect = true}) {
+  close({allowReconnect = true}) async {
     if (!allowReconnect) {
       this.monitor.stop();
     }
     if (this.isActive()) {
-      // return this.webSocket.close();
+      return await this.webSocket.close();
     }
   }
 
   // define return type
-  reopen() {
+  reopen() async {
     Logger.log('Reopening WebSocket, current state is ${this._getState()}');
     if (this.isActive()) {
       try {
-        return this.close();
+        return await this.close();
       } catch (error) {
         Logger.log('Failed to reopen WebSocket $error');
       } finally {
@@ -70,7 +73,7 @@ class Connection {
         new Timer(Duration(milliseconds: reopenDelay), this.open);
       }
     } else {
-      return this.open();
+      return await this.open();
     }
   }
 
@@ -89,8 +92,6 @@ class Connection {
   bool isActive() {
     return this._isState(["open", "connecting"]);
   }
-
-  // private part. replace func by _func later.
 
   bool _isProtocolSupported() {
     // this line check if value of this.getProtocol() presented in supported protocols
@@ -116,17 +117,21 @@ class Connection {
   }
 
   void _installEventHandlers() {
-    // for (let eventName in this.events) {
-    //   const handler = this.events[eventName].bind(this);
-    //   this.webSocket[`on${eventName}`] = handler;
-    // }
+    this.webSocket.listen(this.onMessage,
+        onDone: this.onDone, onError: this.onError, cancelOnError: false);
   }
 
-  void _uninstallEventHandlers() {
-    // for (let eventName in this.events) {
-    //   this.webSocket[`on${eventName}`] = function() {};
-    // }
+  void onMessage(List<int> data) {
+    String message = new String.fromCharCodes(data).trim();
+    Logger.log(message);
   }
+
+  void onDone() {
+    this.webSocket.destroy();
+    this.webSocket = null;
+  }
+
+  void onError(List<int> data) {}
 }
 
 // Connection.prototype.events = {
