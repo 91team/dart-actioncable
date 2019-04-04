@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
@@ -31,10 +33,12 @@ class Connection {
 
   bool open() {
     if (this.isActive()) {
-      // logger.log(`Attempted to open WebSocket, but existing socket is ${this.getState()}`);
+      Logger.log(
+          'Attempted to open WebSocket, but existing socket is ${this.getState()}');
       return false;
     } else {
-      // logger.log(`Opening WebSocket, current state is ${this.getState()}, subprotocols: ${protocols}`);
+      Logger.log(
+          'Opening WebSocket, current state is ${this.getState()}, subprotocols: ${protocols}');
       // if (this.webSocket) { this.uninstallEventHandlers(); }
       // this.webSocket = new adapters.WebSocket(this.consumer.url, protocols);
       // this.installEventHandlers();
@@ -55,15 +59,15 @@ class Connection {
 
   // define return type
   reopen() {
-    // logger.log(`Reopening WebSocket, current state is ${this.getState()}`)
+    Logger.log('Reopening WebSocket, current state is ${this.getState()}');
     if (this.isActive()) {
       try {
         return this.close();
       } catch (error) {
-        // logger.log("Failed to reopen WebSocket", error);
+        Logger.log('Failed to reopen WebSocket $error');
       } finally {
-        // logger.log(`Reopening WebSocket in ${this.constructor.reopenDelay}ms`);
-        // setTimeout(this.open, this.constructor.reopenDelay);
+        Logger.log('Reopening WebSocket in ${reopenDelay}ms');
+        new Timer(Duration(milliseconds: reopenDelay), this.open);
       }
     } else {
       return this.open();
@@ -79,17 +83,16 @@ class Connection {
   }
 
   bool isOpen() {
-    // return this.isState("open");
-    return false; // delete
+    return this.isState(["open"]);
   }
 
   bool isActive() {
-    // return this.isState("open", "connecting");
-    return false; // delete
+    return this.isState(["open", "connecting"]);
   }
 
   // private part. replace func by _func later.
 
+  // TODO
   bool isProtocolSupported() {
     // this line check if value of this.getProtocol() presented in supported protocols
     // return indexOf.call(supportedProtocols, this.getProtocol()) >= 0;
