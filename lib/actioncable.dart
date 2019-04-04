@@ -1,10 +1,7 @@
-// export 'src/connection.dart';
 export 'src/connection_monitor.dart';
 export 'src/consumer.dart';
 export 'src/subscription.dart';
 export 'src/subscriptions.dart';
-export 'src/adapters.dart';
-export 'src/logger.dart';
 
 import 'src/consumer.dart';
 

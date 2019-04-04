@@ -1,4 +1,3 @@
-import 'adapters.dart';
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
