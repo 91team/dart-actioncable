@@ -58,12 +58,14 @@ class Subscriptions {
     return this.subscriptions.where((s) => s.identifier == identifier);
   }
 
+  // define types
   reload() {
     return this
         .subscriptions
         .map((subscription) => this.sendCommand(subscription, "subscribe"));
   }
 
+  // define types
   notifyAll(callbackName, args) {
     return this
         .subscriptions
@@ -71,6 +73,7 @@ class Subscriptions {
   }
 
   // it may cause troubles
+  // define types
   notify(Subscription subscription, String callbackName, [dynamic args]) {
     List subscriptions;
     if (subscription is String) {
@@ -84,7 +87,7 @@ class Subscriptions {
             : null));
   }
 
-  sendCommand(Subscription subscription, String command) {
+  bool sendCommand(Subscription subscription, String command) {
     String identifier = subscription.identifier;
     return this.consumer.send({command, identifier});
   }

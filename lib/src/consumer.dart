@@ -4,49 +4,30 @@ import 'subscriptions.dart';
 class Consumer {
   String url;
   Subscriptions subscriptions;
-  Connection conection;
+  Connection connection;
 
   Consumer(this.url) {
     this.subscriptions = new Subscriptions(this);
-    this.conection = new Connection(this);
+    this.connection = new Connection(this);
   }
 
-  getUrl() {
-    // return createWebSocketURL(this.url);
+  bool send(data) {
+    return this.connection.send(data);
   }
 
-  send(data) {
-    // return this.connection.send(data);
+  bool connect() {
+    return this.connection.open();
   }
 
-  connect() {
-    // return this.connection.open();
-  }
-
+  // define type
   disconnect() {
-    // return this.connection.close({allowReconnect: false});
+    return this.connection.close(allowReconnect: false);
   }
 
-  ensureActiveConnection() {
-    // if (!this.connection.isActive()) {
-    //   return this.connection.open();
-    // }
+  bool ensureActiveConnection() {
+    if (!this.connection.isActive()) {
+      return this.connection.open();
+    }
+    return true;
   }
 }
-
-// export function createWebSocketURL(url) {
-//   if (typeof url === "function") {
-//     url = url()
-//   }
-
-//   if (url && !/^wss?:/i.test(url)) {
-//     const a = document.createElement("a")
-//     a.href = url
-//     // Fix populating Location properties in IE. Otherwise, protocol will be blank.
-//     a.href = a.href
-//     a.protocol = a.protocol.replace("http", "ws")
-//     return a.href
-//   } else {
-//     return url
-//   }
-// }
