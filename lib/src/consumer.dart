@@ -6,9 +6,10 @@ class Consumer {
   Subscriptions subscriptions;
   Connection conection;
 
-  Consumer({this.url})
-      : this.subscriptions = new Subscriptions(),
-        this.conection = new Connection();
+  Consumer(this.url) {
+    this.subscriptions = new Subscriptions(this);
+    this.conection = new Connection(this);
+  }
 
   getUrl() {
     // return createWebSocketURL(this.url);

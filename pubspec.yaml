@@ -1,3 +1,6 @@
-name: dart-actioncable
+name: dart_actioncable
 version: 0.0.1
 description: A plugin to easily interact with RoR actioncable
+
+environment:
+  sdk: ">=2.1.0 <3.0.0"
