@@ -10,7 +10,7 @@ import 'subscriptions.dart';
 /// Encapsulate the cable connection held by the consumer. This is an internal class not intended for direct user manipulation.
 
 class Connection {
-  Socket webSocket;
+  WebSocket webSocket;
 
   Consumer consumer;
   Subscriptions subscriptions;
@@ -23,15 +23,11 @@ class Connection {
     this.subscriptions = consumer.subscriptions;
     this.monitor = new ConnectionMonitor(this);
     this.connected = false;
-  }
 
-  bool send(data) {
-    if (this.isOpen()) {
-      // this.webSocket.send(JSON.stringify(data));
-      return true;
-    } else {
-      return false;
-    }
+    this.open().then((res) {
+      print("   -> Open");
+      print(res);
+    });
   }
 
   Future<bool> open() async {
@@ -43,25 +39,36 @@ class Connection {
       Logger.log(
           'Opening WebSocket, current state is ${this._getState()}, subprotocols: ${protocols}');
 
-      this.webSocket = await Socket.connect(this.consumer.url, 3000);
+      this.webSocket = await WebSocket.connect(this.consumer.url);
       this._installEventHandlers();
       this.monitor.start();
       return true;
     }
   }
 
-  // define return type
-  close({allowReconnect = true}) async {
-    if (!allowReconnect) {
-      this.monitor.stop();
-    }
-    if (this.isActive()) {
-      return await this.webSocket.close();
+  bool send(data) {
+    if (this.isOpen()) {
+      // this.webSocket.send(JSON.stringify(data));
+      return true;
+    } else {
+      return false;
     }
   }
 
   // define return type
-  reopen() async {
+  Future<bool> close({allowReconnect = true}) async {
+    if (!allowReconnect) {
+      this.monitor.stop();
+    }
+    if (this.isActive()) {
+      await this.webSocket.close();
+      return true;
+    }
+    return false;
+  }
+
+  // define return type
+  Future<bool> reopen() async {
     Logger.log('Reopening WebSocket, current state is ${this._getState()}');
     if (this.isActive()) {
       try {
@@ -70,19 +77,20 @@ class Connection {
         Logger.log('Failed to reopen WebSocket $error');
       } finally {
         Logger.log('Reopening WebSocket in ${reopenDelay}ms');
-        new Timer(Duration(milliseconds: reopenDelay), this.open);
+        return await new Future.delayed(
+            new Duration(milliseconds: reopenDelay), this.open);
       }
     } else {
       return await this.open();
     }
   }
 
-  // define return type
-  getProtocol() {
-    // if (this.webSocket) {
-    //   return this.webSocket.protocol;
-    // }
-    return 'wss'; // delete
+  String getProtocol() {
+    if (this.webSocket != null) {
+      return this.webSocket.protocol;
+    } else {
+      throw Exception('Trying to get protocol on null websocket');
+    }
   }
 
   bool isOpen() {
@@ -101,18 +109,19 @@ class Connection {
 
   bool _isState(List states) {
     // return indexOf.call(states, this.getState()) >= 0;
+
     return true; // delete
   }
 
   // define return type
   _getState() {
-    // if (this.webSocket) {
-    //   for (let state in adapters.WebSocket) {
-    //     if (adapters.WebSocket[state] == this.webSocket.readyState) {
-    //       return state.toLowerCase();
-    //     }
-    //   }
-    // }
+    if (this.webSocket != null) {
+      // for (let state in adapters.WebSocket) {
+      //   if (adapters.WebSocket[state] == this.webSocket.readyState) {
+      //     return state.toLowerCase();
+      //   }
+      // }
+    }
     return null; // don't delete.
   }
 
@@ -127,7 +136,7 @@ class Connection {
   }
 
   void onDone() {
-    this.webSocket.destroy();
+    this.webSocket.close();
     this.webSocket = null;
   }
 
