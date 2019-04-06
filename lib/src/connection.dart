@@ -1,14 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'dart:math';
 
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
-import 'utils/logger.dart';
 import 'subscriptions.dart';
+import 'utils/logger.dart';
 
 /// Encapsulate the cable connection held by the consumer. This is an internal class not intended for direct user manipulation.
-
 class Connection {
   WebSocket webSocket;
 
@@ -39,7 +40,9 @@ class Connection {
       Logger.log(
           'Opening WebSocket, current state is ${this._getState()}, subprotocols: ${protocols}');
 
-      this.webSocket = await WebSocket.connect(this.consumer.url);
+      Logger.log('Creating connection with ${this.consumer.url}');
+      this.webSocket = await this._createSocket(this.consumer.url);
+      // this.webSocket = await WebSocket.connect(this.consumer.url);
       this._installEventHandlers();
       this.monitor.start();
       return true;
@@ -48,6 +51,7 @@ class Connection {
 
   bool send(data) {
     if (this.isOpen()) {
+      Logger.log('Sending $data');
       // this.webSocket.send(JSON.stringify(data));
       return true;
     } else {
@@ -55,7 +59,6 @@ class Connection {
     }
   }
 
-  // define return type
   Future<bool> close({allowReconnect = true}) async {
     if (!allowReconnect) {
       this.monitor.stop();
@@ -67,7 +70,6 @@ class Connection {
     return false;
   }
 
-  // define return type
   Future<bool> reopen() async {
     Logger.log('Reopening WebSocket, current state is ${this._getState()}');
     if (this.isActive()) {
@@ -101,28 +103,51 @@ class Connection {
     return this._isState(["open", "connecting"]);
   }
 
+  Future<WebSocket> _createSocket(String url) async {
+    Random r = new Random();
+    String key = base64.encode(List<int>.generate(8, (_) => r.nextInt(255)));
+
+    HttpClient client = HttpClient(/* optional security context here */);
+    HttpClientRequest request = await client.get(
+        'localhost', 3000, 'cable'); // form the correct url here
+    request.headers.add('Connection', 'upgrade');
+    request.headers.add('Upgrade', 'websocket');
+    request.headers.add('sec-websocket-version', '13');
+    request.headers.add('sec-websocket-key', key);
+    request.headers.add('HTTP_ORIGIN', 'localhost');
+
+    HttpClientResponse response = await request.close();
+    // todo check the status code, key etc
+    Socket socket = await response.detachSocket();
+
+    this.webSocket = WebSocket.fromUpgradedSocket(
+      socket,
+      serverSide: false,
+    );
+
+    return this.webSocket;
+  }
+
+  /// Check if websocket's subprotocol is supported
   bool _isProtocolSupported() {
-    // this line check if value of this.getProtocol() presented in supported protocols
-    // return indexOf.call(supportedProtocols, this.getProtocol()) >= 0;
-    return true; // delete
+    return protocols.indexOf(this.getProtocol()) >= 0;
   }
 
+  /// Check if current websocket's state is in list of passed states
   bool _isState(List states) {
-    // return indexOf.call(states, this.getState()) >= 0;
-
-    return true; // delete
+    return states.indexOf(this._getState()) >= 0;
   }
 
-  // define return type
-  _getState() {
+  /// Return current state of websocket
+  String _getState() {
     if (this.webSocket != null) {
-      // for (let state in adapters.WebSocket) {
-      //   if (adapters.WebSocket[state] == this.webSocket.readyState) {
-      //     return state.toLowerCase();
-      //   }
-      // }
+      for (String state in wsStates.keys) {
+        if (wsStates[state] == this.webSocket.readyState) {
+          return state;
+        }
+      }
     }
-    return null; // don't delete.
+    return null;
   }
 
   void _installEventHandlers() {
@@ -130,9 +155,8 @@ class Connection {
         onDone: this.onDone, onError: this.onError, cancelOnError: false);
   }
 
-  void onMessage(List<int> data) {
-    String message = new String.fromCharCodes(data).trim();
-    Logger.log(message);
+  void onMessage(dynamic data) {
+    Logger.log(data);
   }
 
   void onDone() {
@@ -140,7 +164,11 @@ class Connection {
     this.webSocket = null;
   }
 
-  void onError(List<int> data) {}
+  void onError(Object error, StackTrace st) {
+    Logger.log('Error');
+    print(error);
+    print(st);
+  }
 }
 
 // Connection.prototype.events = {

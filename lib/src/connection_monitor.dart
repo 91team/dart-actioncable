@@ -34,7 +34,7 @@ class ConnectionMonitor {
       this._startPolling();
       // addEventListener("visibilitychange", this._visibilityDidChange);
       Logger.log(
-          'ConnectionMonitor started. pollInterval = ${this._getPollInterval()} ms');
+          'ConnectionMonitor started. pollInterval = ${this._getPollInterval()} s');
     }
   }
 
