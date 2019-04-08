@@ -114,7 +114,7 @@ class Connection {
     request.headers.add('Upgrade', 'websocket');
     request.headers.add('sec-websocket-version', '13');
     request.headers.add('sec-websocket-key', key);
-    request.headers.add('HTTP_ORIGIN', 'localhost');
+    request.headers.add('ORIGIN', 'http://localhost:3000');
 
     HttpClientResponse response = await request.close();
     // todo check the status code, key etc
