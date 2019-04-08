@@ -6,6 +6,7 @@ import 'dart:math';
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
+import 'subscription.dart';
 import 'subscriptions.dart';
 import 'utils/logger.dart';
 
@@ -54,10 +55,11 @@ class Connection {
   bool send(data) {
     if (this.isOpen()) {
       Logger.log('Sending $data');
-      // this.webSocket.send(JSON.stringify(data));
+      this.webSocket.add(json.encode(data));
       return true;
     } else {
-      return false;
+      throw Exception(
+          'Trying to send data while connection is not opened. Data: ${data}');
     }
   }
 
@@ -151,13 +153,12 @@ class Connection {
   }
 
   void _installEventHandlers() {
-    this.webSocket.listen(this.onMessage,
-        onDone: this.onDone, onError: this.onError, cancelOnError: false);
+    this
+        .webSocket
+        .listen(this.onMessage, onError: this.onError, cancelOnError: false);
   }
 
   void onMessage(dynamic data) {
-    Logger.log(data);
-
     if (!this._isProtocolSupported()) {
       return null;
     }
@@ -169,6 +170,9 @@ class Connection {
     dynamic message = parsedJson['message'];
     dynamic reconnect = parsedJson['reconnect'];
     dynamic reason = parsedJson['reason'];
+
+    if (type != MessageType.ping && message != null)
+      Logger.log(message.toString());
 
     switch (type) {
       case MessageType.welcome:
@@ -193,25 +197,8 @@ class Connection {
     }
   }
 
-  // TODO: Check if it's calling on manual closing connection
-  void onDone() {
-    this.webSocket.close();
-    this.webSocket = null;
-
-    Logger.log("WebSocket onDone event");
-    if (!this.connected) {
-      return null;
-    }
-    this.connected = false;
-    this.monitor.recordDisconnect();
-
-    // Need to understand what it does and fix it
-    // return this.subscriptions.notifyAll(
-    //     "disconnected", {willAttemptReconnect: this.monitor.isRunning()});
-  }
-
   void onError(Object error, StackTrace st) {
     Logger.log('Error');
-    Logger.log(error);
+    Logger.log(error.toString());
   }
 }

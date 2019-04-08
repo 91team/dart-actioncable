@@ -32,7 +32,6 @@ class ConnectionMonitor {
       this.startedAt = now();
       this.stoppedAt = null;
       this._startPolling();
-      // addEventListener("visibilitychange", this._visibilityDidChange);
       Logger.log(
           'ConnectionMonitor started. pollInterval = ${this._getPollInterval()} s');
     }
@@ -42,7 +41,6 @@ class ConnectionMonitor {
     if (this.isRunning()) {
       this.stoppedAt = now();
       this._stopPolling();
-      // removeEventListener("visibilitychange", this._visibilityDidChange);
       Logger.log('ConnectionMonitor stopped');
     }
   }
@@ -112,16 +110,4 @@ class ConnectionMonitor {
     return (this.disconnectedAt != null) &&
         (secondsSince(this.disconnectedAt) < staleThreshold);
   }
-
-  // void _visibilityDidChange() {
-  // if (document.visibilityState == "visible") {
-  //   setTimeout(() {
-  //     if (this.connectionIsStale() || !this.connection.isOpen()) {
-  //       Logger.log(
-  //           'ConnectionMonitor reopening stale connection on visibilitychange. visbilityState = ${document.visibilityState}');
-  //       this.connection.reopen();
-  //     }
-  //   }, 200);
-  // }
-  // }
 }

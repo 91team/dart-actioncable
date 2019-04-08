@@ -16,17 +16,16 @@ class Subscriptions {
 
   Subscriptions(this.consumer) : subscriptions = [];
 
-  Subscription create(String channelName) {
-    String channel = channelName;
-    // get params instead of channelName
-    // const params = typeof channel === "object" ? channel : {channel};
-    Subscription subscription = new Subscription(this.consumer, channel);
-    return this.add(subscription);
+  Future<Subscription> create(String channelName) async {
+    Map<String, dynamic> params = {'channel': channelName};
+
+    Subscription subscription = new Subscription(this.consumer, params);
+    return await this.add(subscription);
   }
 
-  Subscription add(subscription) {
+  Future<Subscription> add(subscription) async {
     this.subscriptions.add(subscription);
-    this.consumer.ensureActiveConnection();
+    await this.consumer.ensureActiveConnection();
     this.notify(subscription, "initialized");
     this.sendCommand(subscription, "subscribe");
     return subscription;
@@ -40,7 +39,7 @@ class Subscriptions {
     return subscription;
   }
 
-  List<Subscription> reject(identifier) {
+  List<Subscription> reject(String identifier) {
     return this.findAll(identifier).map((subscription) {
       this.forget(subscription);
       this.notify(subscription, "rejected");
@@ -55,7 +54,7 @@ class Subscriptions {
   }
 
   List<Subscription> findAll(identifier) {
-    return this.subscriptions.where((s) => s.identifier == identifier);
+    return this.subscriptions.where((s) => s.identifier == identifier).toList();
   }
 
   // define types
@@ -66,29 +65,32 @@ class Subscriptions {
   }
 
   // define types
-  notifyAll(callbackName, args) {
-    return this
+  void notifyAll(callbackName, args) {
+    this
         .subscriptions
         .map((subscription) => this.notify(subscription, callbackName, args));
   }
 
-  // it may cause troubles. Needs to understand this code & rewrite
   // define types
-  notify(Subscription subscription, String callbackName, [dynamic args]) {
+  void notify(dynamic subscription, String callbackName,
+      [dynamic notification]) {
+    if (subscription is! Subscription && subscription is! String) {
+      throw Exception(
+          'Expected Subscription or subscription identifier (string) as first param, but got ${subscription.runtimeType.toString()}');
+    }
     List subscriptions;
     if (subscription is String) {
       subscriptions = this.findAll(subscription);
     } else {
       subscriptions = [subscription];
     }
-    return subscriptions.map((subscription) =>
-        (subscription[callbackName] is Function
-            ? subscription[callbackName](args)
-            : null));
+    subscriptions.map((subscription) => (subscription[callbackName] is Function
+        ? subscription[callbackName](notification)
+        : null));
   }
 
   bool sendCommand(Subscription subscription, String command) {
     String identifier = subscription.identifier;
-    return this.consumer.send({command, identifier});
+    return this.consumer.send({'command': command, 'identifier': identifier});
   }
 }
