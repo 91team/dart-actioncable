@@ -6,7 +6,6 @@ import 'dart:math';
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
-import 'subscription.dart';
 import 'subscriptions.dart';
 import 'utils/logger.dart';
 
@@ -111,9 +110,9 @@ class Connection {
     Random r = new Random();
     String key = base64.encode(List<int>.generate(8, (_) => r.nextInt(255)));
 
-    HttpClient client = HttpClient(/* optional security context here */);
+    HttpClient client = HttpClient();
     HttpClientRequest request = await client.get(
-        'localhost', 3000, 'cable'); // form the correct url here
+        'localhost', 3000, 'cable'); // TODO: form the correct url here
     request.headers.add('Connection', 'upgrade');
     request.headers.add('Upgrade', 'websocket');
     request.headers.add('sec-websocket-version', '13');
@@ -123,7 +122,8 @@ class Connection {
     HttpClientResponse response = await request.close();
     Socket socket = await response.detachSocket();
 
-    // I'm not able to pass more then one protocol (as it's possible in JS), so for now i pass only 'actioncable-v1-json'
+    // I'm not able to pass more then one protocol (as it's possible in JS or in WebSocket from dart:html),
+    // so for now i pass only 'actioncable-v1-json'
     this.webSocket = WebSocket.fromUpgradedSocket(socket,
         serverSide: false, protocol: protocols[0]);
 

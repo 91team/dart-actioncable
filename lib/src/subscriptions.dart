@@ -57,21 +57,17 @@ class Subscriptions {
     return this.subscriptions.where((s) => s.identifier == identifier).toList();
   }
 
-  // define types
-  reload() {
-    return this
+  void reload() {
+    this
         .subscriptions
         .map((subscription) => this.sendCommand(subscription, "subscribe"));
   }
 
-  // define types
-  void notifyAll(callbackName, args) {
-    this
-        .subscriptions
-        .map((subscription) => this.notify(subscription, callbackName, args));
+  void notifyAll(callbackName, notification) {
+    this.subscriptions.map((subscription) =>
+        this.notify(subscription, callbackName, notification));
   }
 
-  // define types
   void notify(dynamic subscription, String callbackName,
       [dynamic notification]) {
     if (subscription is! Subscription && subscription is! String) {
@@ -84,6 +80,8 @@ class Subscriptions {
     } else {
       subscriptions = [subscription];
     }
+
+    // TODO: implement it some another way
     subscriptions.map((subscription) => (subscription[callbackName] is Function
         ? subscription[callbackName](notification)
         : null));
