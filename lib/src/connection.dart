@@ -35,8 +35,8 @@ class Connection {
       Logger.log(
           'Opening WebSocket, current state is ${this._getState()}, subprotocols: ${protocols}');
 
-      Logger.log('Creating connection with ${this.consumer.url}');
-      this.webSocket = await this._createSocket(this.consumer.url);
+      Logger.log('Creating connection with ${this.consumer.host}');
+      this.webSocket = await this._createSocket();
       Logger.log(
           "WebSocket onopen event, using '${this.getProtocol()}' subprotocol");
       this.connected = true;
@@ -106,13 +106,13 @@ class Connection {
     return this._isState(["open", "connecting"]);
   }
 
-  Future<WebSocket> _createSocket(String url) async {
+  Future<WebSocket> _createSocket() async {
     Random r = new Random();
     String key = base64.encode(List<int>.generate(8, (_) => r.nextInt(255)));
 
     HttpClient client = HttpClient();
     HttpClientRequest request = await client.get(
-        'localhost', 3000, 'cable'); // TODO: form the correct url here
+        this.consumer.host, this.consumer.port, this.consumer.cablePath);
     request.headers.add('Connection', 'upgrade');
     request.headers.add('Upgrade', 'websocket');
     request.headers.add('sec-websocket-version', '13');
@@ -122,7 +122,7 @@ class Connection {
     HttpClientResponse response = await request.close();
     Socket socket = await response.detachSocket();
 
-    // I'm not able to pass more then one protocol (as it's possible in JS or in WebSocket from dart:html),
+    // I'm not able to pass more then one protocol (as it's possible in JS or in a WebSocket from dart:html),
     // so for now i pass only 'actioncable-v1-json'
     this.webSocket = WebSocket.fromUpgradedSocket(socket,
         serverSide: false, protocol: protocols[0]);

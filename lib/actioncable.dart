@@ -4,7 +4,11 @@ export 'src/consumer.dart';
 import 'src/consumer.dart';
 import 'src/utils/logger.dart';
 
-Consumer createConsumer(String url, {bool enableLogs = false}) {
+Consumer createConsumer(
+    {String host,
+    int port = 80,
+    String cablePath = 'cable',
+    bool enableLogs = false}) {
   if (enableLogs) Logger.enable();
-  return new Consumer(url);
+  return new Consumer(host: host, port: port, cablePath: cablePath);
 }

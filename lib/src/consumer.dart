@@ -2,11 +2,13 @@ import 'connection.dart';
 import 'subscriptions.dart';
 
 class Consumer {
-  String url;
   Subscriptions subscriptions;
   Connection connection;
+  String host;
+  int port;
+  String cablePath;
 
-  Consumer(this.url) {
+  Consumer({this.host, this.port = 80, this.cablePath = 'cable'}) {
     this.subscriptions = new Subscriptions(this);
     this.connection = new Connection(this);
   }
@@ -19,8 +21,7 @@ class Consumer {
     return await this.connection.open();
   }
 
-  // define type
-  disconnect() async {
+  Future<bool> disconnect() async {
     return await this.connection.close(allowReconnect: false);
   }
 

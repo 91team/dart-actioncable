@@ -103,7 +103,8 @@ class Subscriptions {
           break;
         case SubscriptionEventType.received:
           if (subscription.eventHandlers.isReceptionHandled) {
-            subscription.eventHandlers.onReceived(notification);
+            if (notification != null)
+              subscription.eventHandlers.onReceived(notification);
           }
           break;
         case SubscriptionEventType.rejected:
