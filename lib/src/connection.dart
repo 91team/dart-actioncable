@@ -187,13 +187,15 @@ class Connection {
         this.monitor.recordPing();
         break;
       case MessageType.confirmation:
-        this.subscriptions.notify(identifier, "connected");
+        this.subscriptions.notify(identifier, SubscriptionEventType.connected);
         break;
       case MessageType.rejection:
         this.subscriptions.reject(identifier);
         break;
       default:
-        this.subscriptions.notify(identifier, "received", message);
+        this
+            .subscriptions
+            .notify(identifier, SubscriptionEventType.received, message);
     }
   }
 

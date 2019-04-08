@@ -1,5 +1,7 @@
 import 'consumer.dart';
 import 'subscription.dart';
+import 'event_handler.dart';
+import 'constants.dart';
 
 /// Collection class for creating (and internally managing) channel subscriptions. The only method intended to be triggered by the user
 /// us ActionCable.Subscriptions#create, and it should be called through the consumer like so:
@@ -16,17 +18,23 @@ class Subscriptions {
 
   Subscriptions(this.consumer) : subscriptions = [];
 
-  Future<Subscription> create(String channelName) async {
+  Future<Subscription> create(String channelName,
+      [SubscriptionEventHandlers handlers]) async {
     Map<String, dynamic> params = {'channel': channelName};
 
-    Subscription subscription = new Subscription(this.consumer, params);
+    SubscriptionEventHandlers eventHandlers =
+        handlers ?? new SubscriptionEventHandlers();
+
+    Subscription subscription =
+        new Subscription(this.consumer, eventHandlers, params);
+
     return await this.add(subscription);
   }
 
   Future<Subscription> add(subscription) async {
     this.subscriptions.add(subscription);
     await this.consumer.ensureActiveConnection();
-    this.notify(subscription, "initialized");
+    this.notify(subscription, SubscriptionEventType.initialized);
     this.sendCommand(subscription, "subscribe");
     return subscription;
   }
@@ -42,7 +50,7 @@ class Subscriptions {
   List<Subscription> reject(String identifier) {
     return this.findAll(identifier).map((subscription) {
       this.forget(subscription);
-      this.notify(subscription, "rejected");
+      this.notify(subscription, SubscriptionEventType.rejected);
       return subscription;
     });
   }
@@ -68,23 +76,43 @@ class Subscriptions {
         this.notify(subscription, callbackName, notification));
   }
 
-  void notify(dynamic subscription, String callbackName,
+  void notify(dynamic subscription, SubscriptionEventType eventType,
       [dynamic notification]) {
     if (subscription is! Subscription && subscription is! String) {
       throw Exception(
           'Expected Subscription or subscription identifier (string) as first param, but got ${subscription.runtimeType.toString()}');
     }
-    List subscriptions;
+    List<Subscription> subscriptions;
     if (subscription is String) {
       subscriptions = this.findAll(subscription);
     } else {
       subscriptions = [subscription];
     }
 
-    // TODO: implement it some another way
-    subscriptions.map((subscription) => (subscription[callbackName] is Function
-        ? subscription[callbackName](notification)
-        : null));
+    subscriptions.map((subscription) {
+      switch (eventType) {
+        case SubscriptionEventType.initialized:
+          if (subscription.eventHandlers.isInitializationHandled) {
+            subscription.eventHandlers.onInitialized();
+          }
+          break;
+        case SubscriptionEventType.connected:
+          if (subscription.eventHandlers.isConnectionHandled) {
+            subscription.eventHandlers.onConnected();
+          }
+          break;
+        case SubscriptionEventType.received:
+          if (subscription.eventHandlers.isReceptionHandled) {
+            subscription.eventHandlers.onReceived(notification);
+          }
+          break;
+        case SubscriptionEventType.rejected:
+          if (subscription.eventHandlers.isRejectionHandled) {
+            subscription.eventHandlers.onRejected(notification);
+          }
+          break;
+      }
+    });
   }
 
   bool sendCommand(Subscription subscription, String command) {

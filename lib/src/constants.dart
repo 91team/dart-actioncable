@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class MessageType {
   static const welcome = 'welcome';
   static const disconnect = 'disconnect';
@@ -12,11 +14,13 @@ class DisconectReasons {
   static const server_restart = 'server_restart';
 }
 
+enum SubscriptionEventType { connected, received, initialized, rejected }
+
 Map<String, int> wsStates = {
-  'connecting': 0,
-  'open': 1,
-  'closing': 2,
-  'closed': 3
+  'connecting': WebSocket.connecting,
+  'open': WebSocket.open,
+  'closing': WebSocket.closing,
+  'closed': WebSocket.closed
 };
 
 List<String> protocols = ["actioncable-v1-json", "actioncable-unsupported"];
