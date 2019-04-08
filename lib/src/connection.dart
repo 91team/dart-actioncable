@@ -37,7 +37,14 @@ class Connection {
 
       Logger.log('Creating connection with ${this.consumer.url}');
       this.webSocket = await this._createSocket(this.consumer.url);
-      // this.webSocket = await WebSocket.connect(this.consumer.url);
+      Logger.log(
+          "WebSocket onopen event, using '${this.getProtocol()}' subprotocol");
+      this.connected = true;
+      if (!this._isProtocolSupported()) {
+        Logger.log(
+            "Protocol is unsupported. Stopping monitor and disconnecting.");
+        return this.close(allowReconnect: false);
+      }
       this._installEventHandlers();
       this.monitor.start();
       return true;
@@ -112,13 +119,10 @@ class Connection {
     request.headers.add('ORIGIN', 'http://localhost:3000');
 
     HttpClientResponse response = await request.close();
-    // todo check the status code, key etc
     Socket socket = await response.detachSocket();
 
-    this.webSocket = WebSocket.fromUpgradedSocket(
-      socket,
-      serverSide: false,
-    );
+    this.webSocket = WebSocket.fromUpgradedSocket(socket,
+        serverSide: false, protocol: protocols[0]);
 
     return this.webSocket;
   }
@@ -161,24 +165,32 @@ class Connection {
     Map<String, dynamic> parsedJson = json.decode(data);
 
     String type = parsedJson['type'];
-    Logger.log(type);
-//     const {identifier, message, reason, reconnect, type} = JSON.parse(event.data)
-//     switch (type) {
-//       case message_types.welcome:
-//         this.monitor.recordConnect()
-//         return this.subscriptions.reload()
-//       case message_types.disconnect:
-//         logger.log(`Disconnecting. Reason: ${reason}`)
-//         return this.close({allowReconnect: reconnect})
-//       case message_types.ping:
-//         return this.monitor.recordPing()
-//       case message_types.confirmation:
-//         return this.subscriptions.notify(identifier, "connected")
-//       case message_types.rejection:
-//         return this.subscriptions.reject(identifier)
-//       default:
-//         return this.subscriptions.notify(identifier, "received", message)
-//     }
+    dynamic identifier = parsedJson['identifier'];
+    dynamic message = parsedJson['message'];
+    dynamic reconnect = parsedJson['reconnect'];
+    dynamic reason = parsedJson['reason'];
+
+    switch (type) {
+      case MessageType.welcome:
+        this.monitor.recordConnect();
+        this.subscriptions.reload();
+        break;
+      case MessageType.disconnect:
+        Logger.log('Disconnecting. Reason: ${reason}');
+        this.close(allowReconnect: reconnect);
+        break;
+      case MessageType.ping:
+        this.monitor.recordPing();
+        break;
+      case MessageType.confirmation:
+        this.subscriptions.notify(identifier, "connected");
+        break;
+      case MessageType.rejection:
+        this.subscriptions.reject(identifier);
+        break;
+      default:
+        this.subscriptions.notify(identifier, "received", message);
+    }
   }
 
   void onDone() {
@@ -203,26 +215,6 @@ class Connection {
 }
 
 // Connection.prototype.events = {
-//   message(event) {
-//     if (!this.isProtocolSupported()) { return }
-//     const {identifier, message, reason, reconnect, type} = JSON.parse(event.data)
-//     switch (type) {
-//       case message_types.welcome:
-//         this.monitor.recordConnect()
-//         return this.subscriptions.reload()
-//       case message_types.disconnect:
-//         logger.log(`Disconnecting. Reason: ${reason}`)
-//         return this.close({allowReconnect: reconnect})
-//       case message_types.ping:
-//         return this.monitor.recordPing()
-//       case message_types.confirmation:
-//         return this.subscriptions.notify(identifier, "connected")
-//       case message_types.rejection:
-//         return this.subscriptions.reject(identifier)
-//       default:
-//         return this.subscriptions.notify(identifier, "received", message)
-//     }
-//   },
 
 //   open() {
 //     logger.log(`WebSocket onopen event, using '${this.getProtocol()}' subprotocol`)
