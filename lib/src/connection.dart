@@ -121,6 +121,7 @@ class Connection {
     HttpClientResponse response = await request.close();
     Socket socket = await response.detachSocket();
 
+    // I'm not able to pass more then one protocol (as it's possible in JS), so for now i pass only 'actioncable-v1-json'
     this.webSocket = WebSocket.fromUpgradedSocket(socket,
         serverSide: false, protocol: protocols[0]);
 
@@ -157,9 +158,8 @@ class Connection {
   void onMessage(dynamic data) {
     Logger.log(data);
 
-    // For now protocol is not supported for some reason. Chek it later
     if (!this._isProtocolSupported()) {
-      // return null;
+      return null;
     }
 
     Map<String, dynamic> parsedJson = json.decode(data);
@@ -193,6 +193,7 @@ class Connection {
     }
   }
 
+  // TODO: Check if it's calling on manual closing connection
   void onDone() {
     this.webSocket.close();
     this.webSocket = null;
@@ -203,6 +204,7 @@ class Connection {
     }
     this.connected = false;
     this.monitor.recordDisconnect();
+
     // Need to understand what it does and fix it
     // return this.subscriptions.notifyAll(
     //     "disconnected", {willAttemptReconnect: this.monitor.isRunning()});
@@ -213,23 +215,3 @@ class Connection {
     Logger.log(error);
   }
 }
-
-// Connection.prototype.events = {
-
-//   open() {
-//     logger.log(`WebSocket onopen event, using '${this.getProtocol()}' subprotocol`)
-//     this.disconnected = false
-//     if (!this.isProtocolSupported()) {
-//       logger.log("Protocol is unsupported. Stopping monitor and disconnecting.")
-//       return this.close({allowReconnect: false})
-//     }
-//   },
-
-//   close(event) {
-//     logger.log("WebSocket onclose event")
-//     if (this.disconnected) { return }
-//     this.disconnected = true
-//     this.monitor.recordDisconnect()
-//     return this.subscriptions.notifyAll("disconnected", {willAttemptReconnect: this.monitor.isRunning()})
-//   },
-// }
