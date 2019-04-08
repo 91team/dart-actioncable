@@ -24,11 +24,6 @@ class Connection {
     this.subscriptions = consumer.subscriptions;
     this.monitor = new ConnectionMonitor(this);
     this.connected = false;
-
-    this.open().then((res) {
-      print("   -> Open");
-      print(res);
-    });
   }
 
   Future<bool> open() async {
@@ -157,17 +152,53 @@ class Connection {
 
   void onMessage(dynamic data) {
     Logger.log(data);
+
+    // For now protocol is not supported for some reason. Chek it later
+    if (!this._isProtocolSupported()) {
+      // return null;
+    }
+
+    Map<String, dynamic> parsedJson = json.decode(data);
+
+    String type = parsedJson['type'];
+    Logger.log(type);
+//     const {identifier, message, reason, reconnect, type} = JSON.parse(event.data)
+//     switch (type) {
+//       case message_types.welcome:
+//         this.monitor.recordConnect()
+//         return this.subscriptions.reload()
+//       case message_types.disconnect:
+//         logger.log(`Disconnecting. Reason: ${reason}`)
+//         return this.close({allowReconnect: reconnect})
+//       case message_types.ping:
+//         return this.monitor.recordPing()
+//       case message_types.confirmation:
+//         return this.subscriptions.notify(identifier, "connected")
+//       case message_types.rejection:
+//         return this.subscriptions.reject(identifier)
+//       default:
+//         return this.subscriptions.notify(identifier, "received", message)
+//     }
   }
 
   void onDone() {
     this.webSocket.close();
     this.webSocket = null;
+
+    Logger.log("WebSocket onDone event");
+    if (!this.connected) {
+      return null;
+    }
+    this.connected = false;
+    this.monitor.recordDisconnect();
+    // Need to understand what it does and fix it
+    // return this.subscriptions.notifyAll(
+    //     "disconnected", {willAttemptReconnect: this.monitor.isRunning()});
   }
 
   void onError(Object error, StackTrace st) {
     Logger.log('Error');
-    print(error);
-    print(st);
+    Logger.log(error);
   }
 }
 
@@ -209,8 +240,4 @@ class Connection {
 //     this.monitor.recordDisconnect()
 //     return this.subscriptions.notifyAll("disconnected", {willAttemptReconnect: this.monitor.isRunning()})
 //   },
-
-//   error() {
-//     logger.log("WebSocket onerror event")
-//   }
 // }

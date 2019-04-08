@@ -72,7 +72,7 @@ class Subscriptions {
         .map((subscription) => this.notify(subscription, callbackName, args));
   }
 
-  // it may cause troubles
+  // it may cause troubles. Needs to understand this code & rewrite
   // define types
   notify(Subscription subscription, String callbackName, [dynamic args]) {
     List subscriptions;
