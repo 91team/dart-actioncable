@@ -89,7 +89,7 @@ class Subscriptions {
       subscriptions = [subscription];
     }
 
-    subscriptions.map((subscription) {
+    for (Subscription subscription in subscriptions) {
       switch (eventType) {
         case SubscriptionEventType.initialized:
           if (subscription.eventHandlers.isInitializationHandled) {
@@ -112,7 +112,7 @@ class Subscriptions {
           }
           break;
       }
-    });
+    }
   }
 
   bool sendCommand(Subscription subscription, String command) {

@@ -32,4 +32,7 @@ class Subscription {
   Subscription unsubscribe() {
     return this.consumer.subscriptions.remove(this);
   }
+
+  @override
+  String toString() => 'Subscription with id: ${this.identifier}';
 }
