@@ -113,11 +113,18 @@ class Connection {
     HttpClient client = HttpClient();
     HttpClientRequest request = await client.get(
         this.consumer.host, this.consumer.port, this.consumer.cablePath);
+
+    bool isHttps = consumer.port == 443;
+    bool isPortCustom = !(consumer.port == 80 || isHttps);
+
+    String port = isPortCustom ? ':${consumer.port}' : '';
+    String origin = 'http${isHttps ? 's' : ''}://${consumer.host}$port';
+
     request.headers.add('Connection', 'upgrade');
     request.headers.add('Upgrade', 'websocket');
     request.headers.add('sec-websocket-version', '13');
     request.headers.add('sec-websocket-key', key);
-    request.headers.add('ORIGIN', 'http://localhost:3000');
+    request.headers.add('ORIGIN', origin);
 
     HttpClientResponse response = await request.close();
     Socket socket = await response.detachSocket();
