@@ -13,7 +13,7 @@ class Subscription {
   }
 
   /// Perform a channel action with the optional data passed as an attribute
-  bool perform(String action, [Map data]) {
+  bool perform(String action, [Map<String, dynamic> data]) {
     Map<String, dynamic> dataToSend = data ?? new Map();
     dataToSend['action'] = action;
     return this.send(dataToSend);
@@ -24,7 +24,7 @@ class Subscription {
     Map params = {
       'command': "message",
       'identifier': this.identifier,
-      'data': convert.jsonEncode(data)
+      'data': convert.json.encode(data)
     };
     return this.consumer.send(params);
   }

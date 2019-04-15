@@ -54,6 +54,8 @@ class Connection {
   bool send(data) {
     if (this.isOpen()) {
       Logger.log('Sending $data');
+      print('   -> hiuvblsdbvk');
+      print(json.encode(data));
       this.webSocket.add(json.encode(data));
       return true;
     } else {
@@ -110,15 +112,18 @@ class Connection {
     Random r = new Random();
     String key = base64.encode(List<int>.generate(8, (_) => r.nextInt(255)));
 
-    HttpClient client = HttpClient();
-    HttpClientRequest request = await client.get(
-        this.consumer.host, this.consumer.port, this.consumer.cablePath);
+    HttpClient client = HttpClient(context: SecurityContext());
+    client.badCertificateCallback =
+        ((X509Certificate cert, String host, int port) => true);
 
     bool isHttps = consumer.port == 443;
     bool isPortCustom = !(consumer.port == 80 || isHttps);
 
     String port = isPortCustom ? ':${consumer.port}' : '';
     String origin = 'http${isHttps ? 's' : ''}://${consumer.host}$port';
+    String fullAddress = '$origin/${consumer.cablePath}';
+
+    HttpClientRequest request = await client.getUrl(Uri.parse(fullAddress));
 
     request.headers.add('Connection', 'upgrade');
     request.headers.add('Upgrade', 'websocket');
@@ -127,6 +132,14 @@ class Connection {
     request.headers.add('ORIGIN', origin);
 
     HttpClientResponse response = await request.close();
+
+    // Expected status code 1xx, (exactly 101 - successfully switched protocol)
+    if (response.statusCode ~/ 100 != 1) {
+      throw Exception(
+        'Failed to connect to the server. Status code ${response.statusCode}',
+      );
+    }
+
     Socket socket = await response.detachSocket();
 
     // I'm not able to pass more then one protocol (as it's possible in JS or in a WebSocket from dart:html),
@@ -166,6 +179,8 @@ class Connection {
   }
 
   void onMessage(dynamic data) {
+    print(data);
+
     if (!this._isProtocolSupported()) {
       return null;
     }
@@ -185,6 +200,7 @@ class Connection {
       case MessageType.welcome:
         this.monitor.recordConnect();
         this.subscriptions.reload();
+        this.subscriptions.notifyAll(SubscriptionEventType.connected, message);
         break;
       case MessageType.disconnect:
         Logger.log('Disconnecting. Reason: ${reason}');
@@ -194,7 +210,7 @@ class Connection {
         this.monitor.recordPing();
         break;
       case MessageType.confirmation:
-        this.subscriptions.notify(identifier, SubscriptionEventType.connected);
+        Logger.log('Got confirmation: ${message}');
         break;
       case MessageType.rejection:
         this.subscriptions.reject(identifier);
