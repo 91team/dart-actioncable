@@ -54,8 +54,6 @@ class Connection {
   bool send(data) {
     if (this.isOpen()) {
       Logger.log('Sending $data');
-      print('   -> hiuvblsdbvk');
-      print(json.encode(data));
       this.webSocket.add(json.encode(data));
       return true;
     } else {
@@ -179,7 +177,7 @@ class Connection {
   }
 
   void onMessage(dynamic data) {
-    print(data);
+    Logger.log(data);
 
     if (!this._isProtocolSupported()) {
       return null;
