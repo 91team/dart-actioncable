@@ -11,7 +11,7 @@ import 'utils/helpers.dart';
 
 class ConnectionMonitor {
   Connection connection;
-  int reconnectAttempts;
+  int reconnectAttempts = 0;
 
   DateTime startedAt;
   DateTime stoppedAt;
@@ -25,7 +25,7 @@ class ConnectionMonitor {
   static const int maxPollInterval = 30;
   static const int pollIntervalMiltiplier = 5;
 
-  ConnectionMonitor(this.connection) : reconnectAttempts = 0;
+  ConnectionMonitor(this.connection);
 
   void start() {
     if (!isRunning()) {

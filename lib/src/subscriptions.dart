@@ -65,9 +65,7 @@ class Subscriptions {
   }
 
   void reload() {
-    this
-        .subscriptions
-        .map((subscription) => sendCommand(subscription, "subscribe"));
+    subscriptions.map((subscription) => sendCommand(subscription, "subscribe"));
   }
 
   void notifyAll(callbackName, notification) {
