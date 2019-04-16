@@ -26,54 +26,53 @@ class Subscriptions {
         handlers ?? new SubscriptionEventHandlers();
 
     Subscription subscription =
-        new Subscription(this.consumer, eventHandlers, params);
+        new Subscription(consumer, eventHandlers, params);
 
-    return await this.add(subscription);
+    return await add(subscription);
   }
 
   Future<Subscription> add(subscription) async {
-    this.subscriptions.add(subscription);
-    await this.consumer.ensureActiveConnection();
-    this.notify(subscription, SubscriptionEventType.initialized);
-    this.sendCommand(subscription, "subscribe");
+    subscriptions.add(subscription);
+    await consumer.ensureActiveConnection();
+    notify(subscription, SubscriptionEventType.initialized);
+    sendCommand(subscription, "subscribe");
     return subscription;
   }
 
   Subscription remove(Subscription subscription) {
-    this.forget(subscription);
-    if (this.findAll(subscription.identifier).length != 0) {
-      this.sendCommand(subscription, "unsubscribe");
+    forget(subscription);
+    if (findAll(subscription.identifier).length != 0) {
+      sendCommand(subscription, "unsubscribe");
     }
     return subscription;
   }
 
   List<Subscription> reject(String identifier) {
-    return this.findAll(identifier).map((subscription) {
-      this.forget(subscription);
-      this.notify(subscription, SubscriptionEventType.rejected);
+    return findAll(identifier).map((subscription) {
+      forget(subscription);
+      notify(subscription, SubscriptionEventType.rejected);
       return subscription;
     });
   }
 
   Subscription forget(subscription) {
-    this.subscriptions =
-        (this.subscriptions.where((sub) => sub != subscription));
+    subscriptions = (subscriptions.where((sub) => sub != subscription));
     return subscription;
   }
 
   List<Subscription> findAll(identifier) {
-    return this.subscriptions.where((s) => s.identifier == identifier).toList();
+    return subscriptions.where((s) => s.identifier == identifier).toList();
   }
 
   void reload() {
     this
         .subscriptions
-        .map((subscription) => this.sendCommand(subscription, "subscribe"));
+        .map((subscription) => sendCommand(subscription, "subscribe"));
   }
 
   void notifyAll(callbackName, notification) {
-    this.subscriptions.map((subscription) =>
-        this.notify(subscription, callbackName, notification));
+    subscriptions.map(
+        (subscription) => notify(subscription, callbackName, notification));
   }
 
   void notify(dynamic subscription, SubscriptionEventType eventType,
@@ -84,7 +83,7 @@ class Subscriptions {
     }
     List<Subscription> subscriptions;
     if (subscription is String) {
-      subscriptions = this.findAll(subscription);
+      subscriptions = findAll(subscription);
     } else {
       subscriptions = [subscription];
     }
@@ -118,6 +117,6 @@ class Subscriptions {
 
   bool sendCommand(Subscription subscription, String command) {
     String identifier = subscription.identifier;
-    return this.consumer.send({'command': command, 'identifier': identifier});
+    return consumer.send({'command': command, 'identifier': identifier});
   }
 }

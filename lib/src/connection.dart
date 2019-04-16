@@ -21,40 +21,40 @@ class Connection {
   static int reopenDelay = 500;
 
   Connection(this.consumer) {
-    this.subscriptions = consumer.subscriptions;
-    this.monitor = new ConnectionMonitor(this);
-    this.connected = false;
+    subscriptions = consumer.subscriptions;
+    monitor = new ConnectionMonitor(this);
+    connected = false;
   }
 
   Future<bool> open() async {
-    if (this.isActive()) {
+    if (isActive()) {
       Logger.log(
-          'Attempted to open WebSocket, but existing socket is ${this._getState()}');
+          'Attempted to open WebSocket, but existing socket is ${_getState()}');
       return false;
     } else {
       Logger.log(
-          'Opening WebSocket, current state is ${this._getState()}, subprotocols: ${protocols}');
+          'Opening WebSocket, current state is ${_getState()}, subprotocols: ${protocols}');
 
-      Logger.log('Creating connection with ${this.consumer.host}');
-      this.webSocket = await this._createSocket();
+      Logger.log('Creating connection with ${consumer.host}');
+      webSocket = await _createSocket();
       Logger.log(
-          "WebSocket onopen event, using '${this.getProtocol()}' subprotocol");
-      this.connected = true;
-      if (!this._isProtocolSupported()) {
+          "WebSocket onopen event, using '${getProtocol()}' subprotocol");
+      connected = true;
+      if (!_isProtocolSupported()) {
         Logger.log(
             "Protocol is unsupported. Stopping monitor and disconnecting.");
-        return this.close(allowReconnect: false);
+        return close(allowReconnect: false);
       }
-      this._installEventHandlers();
-      this.monitor.start();
+      _installEventHandlers();
+      monitor.start();
       return true;
     }
   }
 
   bool send(data) {
-    if (this.isOpen()) {
+    if (isOpen()) {
       Logger.log('Sending $data');
-      this.webSocket.add(json.encode(data));
+      webSocket.add(json.encode(data));
       return true;
     } else {
       throw Exception(
@@ -64,46 +64,46 @@ class Connection {
 
   Future<bool> close({allowReconnect = true}) async {
     if (!allowReconnect) {
-      this.monitor.stop();
+      monitor.stop();
     }
-    if (this.isActive()) {
-      await this.webSocket.close();
+    if (isActive()) {
+      await webSocket.close();
       return true;
     }
     return false;
   }
 
   Future<bool> reopen() async {
-    Logger.log('Reopening WebSocket, current state is ${this._getState()}');
-    if (this.isActive()) {
+    Logger.log('Reopening WebSocket, current state is ${_getState()}');
+    if (isActive()) {
       try {
-        return await this.close();
+        return await close();
       } catch (error) {
         Logger.log('Failed to reopen WebSocket $error');
       } finally {
         Logger.log('Reopening WebSocket in ${reopenDelay}ms');
         return await new Future.delayed(
-            new Duration(milliseconds: reopenDelay), this.open);
+            new Duration(milliseconds: reopenDelay), open);
       }
     } else {
-      return await this.open();
+      return await open();
     }
   }
 
   String getProtocol() {
-    if (this.webSocket != null) {
-      return this.webSocket.protocol;
+    if (webSocket != null) {
+      return webSocket.protocol;
     } else {
       throw Exception('Trying to get protocol on null websocket');
     }
   }
 
   bool isOpen() {
-    return this._isState(["open"]);
+    return _isState(["open"]);
   }
 
   bool isActive() {
-    return this._isState(["open", "connecting"]);
+    return _isState(["open", "connecting"]);
   }
 
   Future<WebSocket> _createSocket() async {
@@ -142,27 +142,27 @@ class Connection {
 
     // I'm not able to pass more then one protocol (as it's possible in JS or in a WebSocket from dart:html),
     // so for now i pass only 'actioncable-v1-json'
-    this.webSocket = WebSocket.fromUpgradedSocket(socket,
+    webSocket = WebSocket.fromUpgradedSocket(socket,
         serverSide: false, protocol: protocols[0]);
 
-    return this.webSocket;
+    return webSocket;
   }
 
   /// Check if websocket's subprotocol is supported
   bool _isProtocolSupported() {
-    return protocols.indexOf(this.getProtocol()) >= 0;
+    return protocols.indexOf(getProtocol()) >= 0;
   }
 
   /// Check if current websocket's state is in list of passed states
   bool _isState(List states) {
-    return states.indexOf(this._getState()) >= 0;
+    return states.indexOf(_getState()) >= 0;
   }
 
   /// Return current state of websocket
   String _getState() {
-    if (this.webSocket != null) {
+    if (webSocket != null) {
       for (String state in wsStates.keys) {
-        if (wsStates[state] == this.webSocket.readyState) {
+        if (wsStates[state] == webSocket.readyState) {
           return state;
         }
       }
@@ -171,15 +171,14 @@ class Connection {
   }
 
   void _installEventHandlers() {
-    this
-        .webSocket
-        .listen(this.onMessage, onError: this.onError, cancelOnError: false);
+    webSocket.listen(onMessage,
+        onDone: onClose, onError: onError, cancelOnError: false);
   }
 
   void onMessage(dynamic data) {
     Logger.log(data);
 
-    if (!this._isProtocolSupported()) {
+    if (!_isProtocolSupported()) {
       return null;
     }
 
@@ -196,28 +195,33 @@ class Connection {
 
     switch (type) {
       case MessageType.welcome:
-        this.monitor.recordConnect();
-        this.subscriptions.reload();
-        this.subscriptions.notifyAll(SubscriptionEventType.connected, message);
+        monitor.recordConnect();
+        subscriptions.reload();
+        subscriptions.notifyAll(SubscriptionEventType.connected, message);
         break;
       case MessageType.disconnect:
         Logger.log('Disconnecting. Reason: ${reason}');
-        this.close(allowReconnect: reconnect);
+        close(allowReconnect: reconnect);
         break;
       case MessageType.ping:
-        this.monitor.recordPing();
+        monitor.recordPing();
         break;
       case MessageType.confirmation:
         Logger.log('Got confirmation: ${message}');
         break;
       case MessageType.rejection:
-        this.subscriptions.reject(identifier);
+        subscriptions.reject(identifier);
         break;
       default:
-        this
-            .subscriptions
-            .notify(identifier, SubscriptionEventType.received, message);
+        subscriptions.notify(
+            identifier, SubscriptionEventType.received, message);
     }
+  }
+
+  void onClose() {
+    Logger.log('Connection closed');
+    monitor.recordDisconnect();
+    connected = false;
   }
 
   void onError(Object error, StackTrace st) {

@@ -28,86 +28,85 @@ class ConnectionMonitor {
   ConnectionMonitor(this.connection) : reconnectAttempts = 0;
 
   void start() {
-    if (!this.isRunning()) {
-      this.startedAt = now();
-      this.stoppedAt = null;
-      this._startPolling();
+    if (!isRunning()) {
+      startedAt = now();
+      stoppedAt = null;
+      _startPolling();
       Logger.log(
-          'ConnectionMonitor started. pollInterval = ${this._getPollInterval()} s');
+          'ConnectionMonitor started. pollInterval = ${_getPollInterval()} s');
     }
   }
 
   void stop() {
-    if (this.isRunning()) {
-      this.stoppedAt = now();
-      this._stopPolling();
+    if (isRunning()) {
+      stoppedAt = now();
+      _stopPolling();
       Logger.log('ConnectionMonitor stopped');
     }
   }
 
   bool isRunning() {
-    return (this.startedAt != null) && (this.stoppedAt == null);
+    return (startedAt != null) && (stoppedAt == null);
   }
 
   void recordPing() {
-    this.pingedAt = now();
+    pingedAt = now();
   }
 
   void recordConnect() {
-    this.reconnectAttempts = 0;
-    this.recordPing();
-    this.disconnectedAt = null;
+    reconnectAttempts = 0;
+    recordPing();
+    disconnectedAt = null;
     Logger.log("ConnectionMonitor recorded connect");
   }
 
   void recordDisconnect() {
-    this.disconnectedAt = now();
+    disconnectedAt = now();
     Logger.log("ConnectionMonitor recorded disconnect");
   }
 
   void _startPolling() {
-    this._stopPolling();
-    this._poll();
+    _stopPolling();
+    _poll();
   }
 
   void _stopPolling() {
-    if (this.pollTimeout != null) pollTimeout.cancel();
+    if (pollTimeout != null) pollTimeout.cancel();
   }
 
   void _poll() {
-    this.pollTimeout =
-        new Timer(new Duration(seconds: this._getPollInterval()), () {
-      this._reconnectIfStale();
-      this._poll();
+    pollTimeout = new Timer(new Duration(seconds: _getPollInterval()), () {
+      _reconnectIfStale();
+      _poll();
     });
   }
 
   int _getPollInterval() {
     int interval =
-        pollIntervalMiltiplier * math.log(this.reconnectAttempts + 1) ~/ 1;
+        pollIntervalMiltiplier * math.log(reconnectAttempts + 1) ~/ 1;
     return clamp(interval, minPollInterval, maxPollInterval);
   }
 
   void _reconnectIfStale() {
-    if (this._connectionIsStale()) {
+    if (_connectionIsStale()) {
       Logger.log(
-          'ConnectionMonitor detected stale connection. reconnectAttempts = ${this.reconnectAttempts}, pollInterval = ${this._getPollInterval()} ms, time disconnected = ${secondsSince(this.disconnectedAt)} s, stale threshold = ${staleThreshold} s');
-      this.reconnectAttempts++;
-      if (this._disconnectedRecently()) {
+          'ConnectionMonitor detected stale connection. reconnectAttempts = ${reconnectAttempts}, pollInterval = ${_getPollInterval()} ms, time disconnected = ${secondsSince(disconnectedAt)} s, stale threshold = ${staleThreshold} s');
+      reconnectAttempts++;
+      if (_disconnectedRecently()) {
         Logger.log("ConnectionMonitor skipping reopening recent disconnect");
       } else {
         Logger.log("ConnectionMonitor reopening");
-        this.connection.reopen();
+        connection.reopen();
       }
     }
   }
 
   bool _connectionIsStale() {
-    return secondsSince(this.pingedAt ?? this.startedAt) > staleThreshold;
+    return secondsSince(pingedAt ?? startedAt) > staleThreshold;
   }
 
   bool _disconnectedRecently() {
-    return (this.disconnectedAt != null) &&
-        (secondsSince(this.disconnectedAt) < staleThreshold);
+    return (disconnectedAt != null) &&
+        (secondsSince(disconnectedAt) < staleThreshold);
   }
 }

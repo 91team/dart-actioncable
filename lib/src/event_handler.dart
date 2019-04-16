@@ -13,18 +13,18 @@ class SubscriptionEventHandlers {
       {this.onInitialized, this.onConnected, this.onReceived, this.onRejected});
 
   bool get isInitializationHandled {
-    return (this.onInitialized != null);
+    return (onInitialized != null);
   }
 
   bool get isConnectionHandled {
-    return (this.onConnected != null);
+    return (onConnected != null);
   }
 
   bool get isReceptionHandled {
-    return (this.onReceived != null);
+    return (onReceived != null);
   }
 
   bool get isRejectionHandled {
-    return (this.onRejected != null);
+    return (onRejected != null);
   }
 }

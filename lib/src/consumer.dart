@@ -9,25 +9,25 @@ class Consumer {
   String cablePath;
 
   Consumer({this.host, this.port = 80, this.cablePath = 'cable'}) {
-    this.subscriptions = new Subscriptions(this);
-    this.connection = new Connection(this);
+    subscriptions = new Subscriptions(this);
+    connection = new Connection(this);
   }
 
   bool send(data) {
-    return this.connection.send(data);
+    return connection.send(data);
   }
 
   Future<bool> connect() async {
-    return await this.connection.open();
+    return await connection.open();
   }
 
   Future<bool> disconnect() async {
-    return await this.connection.close(allowReconnect: false);
+    return await connection.close(allowReconnect: false);
   }
 
   Future<bool> ensureActiveConnection() async {
-    if (!this.connection.isActive()) {
-      return await this.connection.open();
+    if (!connection.isActive()) {
+      return await connection.open();
     }
     return true;
   }

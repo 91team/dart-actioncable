@@ -16,23 +16,23 @@ class Subscription {
   bool perform(String action, [Map<String, dynamic> data]) {
     Map<String, dynamic> dataToSend = data ?? new Map();
     dataToSend['action'] = action;
-    return this.send(dataToSend);
+    return send(dataToSend);
   }
 
   // TODO: check if perform is working (may be action must me passed on top level)
   bool send(Map<String, dynamic> data) {
     Map params = {
       'command': "message",
-      'identifier': this.identifier,
+      'identifier': identifier,
       'data': convert.json.encode(data)
     };
-    return this.consumer.send(params);
+    return consumer.send(params);
   }
 
   Subscription unsubscribe() {
-    return this.consumer.subscriptions.remove(this);
+    return consumer.subscriptions.remove(this);
   }
 
   @override
-  String toString() => 'Subscription with id: ${this.identifier}';
+  String toString() => 'Subscription with id: ${identifier}';
 }
