@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:math';
 
+import 'message.dart';
 import 'consumer.dart';
 import 'constants.dart';
 import 'connection_monitor.dart';
@@ -208,6 +209,12 @@ class Connection {
         break;
       case MessageType.confirmation:
         Logger.log('Got confirmation: ${message}');
+        subscriptions.confirmationStreamController.add(
+          SubscriptionConfirmationMessage(
+            type: type,
+            identifier: identifier,
+          ),
+        );
         break;
       case MessageType.rejection:
         subscriptions.reject(identifier);

@@ -4,7 +4,7 @@ class MessageType {
   static const welcome = 'welcome';
   static const disconnect = 'disconnect';
   static const ping = 'ping';
-  static const confirmation = 'confirmation';
+  static const confirmation = 'confirm_subscription';
   static const rejection = 'rejection';
 }
 

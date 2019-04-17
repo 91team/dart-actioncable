@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'consumer.dart';
 import 'subscription.dart';
 import 'event_handler.dart';
 import 'constants.dart';
+import 'message.dart';
 
 /// Collection class for creating (and internally managing) channel subscriptions. The only method intended to be triggered by the user
 /// us ActionCable.Subscriptions#create, and it should be called through the consumer like so:
@@ -14,9 +17,12 @@ import 'constants.dart';
 
 class Subscriptions {
   Consumer consumer;
-  List<Subscription> subscriptions;
+  List<Subscription> subscriptions = [];
 
-  Subscriptions(this.consumer) : subscriptions = [];
+  StreamController<SubscriptionConfirmationMessage>
+      confirmationStreamController = new StreamController();
+
+  Subscriptions(this.consumer);
 
   Future<Subscription> create(String channelName,
       [SubscriptionEventHandlers handlers]) async {
@@ -31,12 +37,30 @@ class Subscriptions {
     return await add(subscription);
   }
 
-  Future<Subscription> add(subscription) async {
+  Future<Subscription> add(Subscription subscription) async {
     subscriptions.add(subscription);
     await consumer.ensureActiveConnection();
     notify(subscription, SubscriptionEventType.initialized);
+
+    Future<bool> waitForConfirmation = new Future(() async {
+      await for (SubscriptionConfirmationMessage message
+          in confirmationStreamController.stream) {
+        if (message.identifier == subscription.identifier) {
+          print('  -> Yeah, confirmed!');
+          return true;
+        }
+      }
+    });
+
+    waitForConfirmation.timeout(Duration(seconds: 10), onTimeout: () {
+      return false;
+    });
+
     sendCommand(subscription, "subscribe");
-    return subscription;
+
+    bool isSubscribed = await waitForConfirmation;
+
+    return isSubscribed ? subscription : null;
   }
 
   Subscription remove(Subscription subscription) {
@@ -117,4 +141,12 @@ class Subscriptions {
     String identifier = subscription.identifier;
     return consumer.send({'command': command, 'identifier': identifier});
   }
+
+  // Stream<SubscriptionConfirmationMessage> _createConfirmationStream(
+  //     Map<String, dynamic> messageJson) async* {
+  //   yield SubscriptionConfirmationMessage(
+  //     type: messageJson['type'],
+  //     identifier: messageJson['identifier'],
+  //   );
+  // }
 }
