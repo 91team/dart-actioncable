@@ -20,7 +20,7 @@ class Subscriptions {
   List<Subscription> subscriptions = [];
 
   StreamController<SubscriptionConfirmationMessage>
-      confirmationStreamController = new StreamController();
+      confirmationStreamController = new StreamController.broadcast();
 
   Subscriptions(this.consumer);
 
@@ -46,7 +46,6 @@ class Subscriptions {
       await for (SubscriptionConfirmationMessage message
           in confirmationStreamController.stream) {
         if (message.identifier == subscription.identifier) {
-          print('  -> Yeah, confirmed!');
           return true;
         }
       }
@@ -141,12 +140,4 @@ class Subscriptions {
     String identifier = subscription.identifier;
     return consumer.send({'command': command, 'identifier': identifier});
   }
-
-  // Stream<SubscriptionConfirmationMessage> _createConfirmationStream(
-  //     Map<String, dynamic> messageJson) async* {
-  //   yield SubscriptionConfirmationMessage(
-  //     type: messageJson['type'],
-  //     identifier: messageJson['identifier'],
-  //   );
-  // }
 }

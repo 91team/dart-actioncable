@@ -63,7 +63,7 @@ class Connection {
     }
   }
 
-  Future<bool> close({allowReconnect = true}) async {
+  Future<bool> close({bool allowReconnect = true}) async {
     if (!allowReconnect) {
       monitor.stop();
     }
@@ -177,8 +177,6 @@ class Connection {
   }
 
   void onMessage(dynamic data) {
-    Logger.log(data);
-
     if (!_isProtocolSupported()) {
       return null;
     }
