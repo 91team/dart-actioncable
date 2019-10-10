@@ -8,7 +8,10 @@ class Consumer {
   int port;
   String cablePath;
 
-  Consumer({this.host, this.port = 80, this.cablePath = 'cable'}) {
+  Map<String, dynamic> headers;
+
+  Consumer(
+      {this.host, this.port = 80, this.cablePath = 'cable', this.headers}) {
     subscriptions = new Subscriptions(this);
     connection = new Connection(this);
   }
