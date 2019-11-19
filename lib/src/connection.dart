@@ -124,6 +124,10 @@ class Connection {
 
     HttpClientRequest request = await client.getUrl(Uri.parse(fullAddress));
 
+    this.consumer.headers.forEach((key, value) {
+      request.headers.add(key, value);
+    });
+
     request.headers.add('Connection', 'upgrade');
     request.headers.add('Upgrade', 'websocket');
     request.headers.add('sec-websocket-version', '13');
